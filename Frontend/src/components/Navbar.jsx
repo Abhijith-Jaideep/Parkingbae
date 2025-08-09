@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+
 
 const Navbar = () => {
   return (
@@ -14,9 +16,9 @@ const Navbar = () => {
         </div>
 
         <ul className="flex items-center gap-6 text-sm md:text-base">
-          <li><a href="/" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Home</a></li>
-          <li><a href="/insights" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Insights</a></li>
-          <li><a href="/parking" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Parking Map</a></li>
+          <Link to="/" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Home</Link>
+          <Link to="/insights" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Insights</Link>
+          <Link to="/parking" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Parking Map</Link>
 
         </ul>
       </div>
