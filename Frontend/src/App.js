@@ -6,10 +6,7 @@ import ParkingPage from './components/ParkingPage';
 
 export default function App() {
   return (
-    <>
-      <h1>
-        hi
-      </h1>
+    <div>
       <Navbar />
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -17,6 +14,6 @@ export default function App() {
         <Route path="/parking" element={<ParkingPage />} />
         <Route path="*" element={<LandingPage />} />
       </Routes>
-    </>
+    </div>
   );
 }
