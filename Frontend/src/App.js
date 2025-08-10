@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import LandingPage from './components/LandingPage';
 import InsightsPage from './components/InsightsPage';
 import ParkingPage from './components/ParkingPage';
+import Map from './components/Map';
 
 export default function App() {
   return (
