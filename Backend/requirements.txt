@@ -2,4 +2,6 @@ Flask
 sqlalchemy 
 psycopg2-binary 
 python-dotenv
+pytest
+requests
 flask-cors
