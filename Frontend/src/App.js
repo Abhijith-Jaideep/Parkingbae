@@ -2,7 +2,8 @@ import './App.css';
 import LandingPage from './components/LandingPage';
 import Navbar from './components/Navbar';
 import InsightsPage from './components/InsightsPage';
-import Map from './components/Map';
+import Map from './components/ParkingMap';
+import ParkingMap from './components/ParkingMap';
 
 function App() {
   return (
@@ -10,7 +11,7 @@ function App() {
       <Navbar/>
       {/* <LandingPage/> */}
       {/* <InsightsPage/> */}
-      <Map/>
+      <ParkingMap/>
     </div>
   );
 }
