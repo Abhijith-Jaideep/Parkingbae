@@ -85,7 +85,7 @@ def merge_sensors_with_parking(sensor_rows, parking_rows, key: str):
 @app.route("/car_ownership")
 def get_car_ownership():
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT * FROM vic_car_ownership_data"))
+        result = conn.execute(text("SELECT * FROM vic_car_ownership_data"))       
         rows = [dict(row) for row in result.mappings()]
     return jsonify(rows)
 
@@ -94,6 +94,12 @@ def get_parking():
     with engine.connect() as conn:
         result = conn.execute(text("SELECT * FROM parking_data"))
         rows = [dict(row) for row in result.mappings()]
+    # Cast Zone_ID and ParkingZone to str
+    for r in rows:
+        if r["Zone_ID"] is not None:
+            r["Zone_ID"] = str(r["Zone_ID"])
+        if r["ParkingZone"] is not None:
+            r["ParkingZone"] = str(r["ParkingZone"])
     return jsonify(rows)
 
 @app.route("/sensors")
