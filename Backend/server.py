@@ -4,9 +4,15 @@ from dotenv import load_dotenv
 import requests
 import os, time 
 from collections import defaultdict
+from flask_cors import CORS, cross_origin
+
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app, resources={
+    r"/car_ownership": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]},
+    r"/parking": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}
+})
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(
