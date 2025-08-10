@@ -1,8 +1,34 @@
 import React from 'react';
 import bgPic from "../assets/landingPic.jpg";
-import {Link} from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { FaCar, FaClock, FaChartLine, FaUsers } from "react-icons/fa";
 
 const LandingPage = () => {
+
+
+    const stats = [
+        {
+            icon: <FaCar className="text-xl text-tealLight" />,
+            value: "45,000+",
+            label: "Total Parking Spaces",
+        },
+        {
+            icon: <FaClock className="text-xl text-tealLight" />,
+            value: "8.5 min",
+            label: "Average Search Time",
+        },
+        {
+            icon: <FaChartLine className="text-xl text-tealLight" />,
+            value: "85%",
+            label: "Peak Hour Occupancy",
+        },
+        {
+            icon: <FaUsers className="text-xl text-tealLight" />,
+            value: "180,000",
+            label: "Daily Commuters",
+        },
+    ];
+
     const cards = [
         {
             icon: "🚗",
@@ -65,6 +91,21 @@ const LandingPage = () => {
                             </Link>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section className="w-full flex justify-center py-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1280px] w-full">
+                    {stats.map((stat) => (
+                        <div
+                            key={stat.label}
+                            className="bg-gray-100 rounded-xl shadow-sm p-6 flex flex-col items-center text-center hover:shadow-md transition"
+                        >
+                            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-teal-50 mb-4">{stat.icon}</div>
+                            <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                            <div className="mt-1 text-sm text-gray-500">{stat.label}</div>
+                        </div>
+                    ))}
                 </div>
             </section>
 
