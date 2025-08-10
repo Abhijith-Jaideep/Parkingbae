@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FaChartBar, FaHome, FaMap } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
@@ -20,25 +21,26 @@ const Navbar = () => {
           <li>
             <Link
               to="/"
-              className="rounded-full px-3 py-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition"
+              className="flex items-center gap-2 rounded-full px-3 py-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition"
             >
-              Home
+              <FaHome className="text-tealLight" /> Home
             </Link>
           </li>
           <li>
             <Link
               to="/insights"
-              className="rounded-full px-3 py-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition"
+              className="flex items-center gap-2 rounded-full px-3 py-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition"
             >
-              Insights
+              <FaChartBar className="text-tealLight" /> Insights
             </Link>
           </li>
+
           <li>
             <Link
               to="/parking"
-              className="rounded-full px-3 py-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition"
+              className="flex items-center gap-2 rounded-full px-3 py-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition"
             >
-              Parking Map
+              <FaMap className="text-tealLight" /> Parking Map
             </Link>
           </li>
         </ul>
@@ -52,11 +54,11 @@ const Navbar = () => {
         >
           {!open ? (
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           ) : (
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           )}
         </button>
@@ -71,30 +73,31 @@ const Navbar = () => {
             <Link
               to="/"
               onClick={() => setOpen(false)}
-              className="block w-full rounded-lg px-3 py-3 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight"
+              className="flex items-center gap-3 rounded-lg px-3 py-3 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight"
             >
-              Home
+              <FaHome className="text-tealLight" /> Home
             </Link>
           </li>
           <li>
             <Link
               to="/insights"
               onClick={() => setOpen(false)}
-              className="block w-full rounded-lg px-3 py-3 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight"
+              className="flex items-center gap-3 rounded-lg px-3 py-3 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight"
             >
-              Insights
+              <FaChartBar className="text-tealLight" /> Insights
             </Link>
           </li>
           <li>
             <Link
               to="/parking"
               onClick={() => setOpen(false)}
-              className="block w-full rounded-lg px-3 py-3 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight"
+              className="flex items-center gap-3 rounded-lg px-3 py-3 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight"
             >
-              Parking Map
+              <FaMap className="text-tealLight" /> Parking Map
             </Link>
           </li>
         </ul>
+
       </div>
 
       {open && (
