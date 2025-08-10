@@ -9,90 +9,6 @@ import {
   CartesianGrid,
 } from "recharts";
 
-/* ---------- Scoped styles (no extra libs) ---------- */
-const styles = `
-  .page {
-    max-width: 1100px;     /* key change: prevents full-width stretching */
-    margin: 0 auto;
-    padding: 16px 20px 28px;
-    box-sizing: border-box;
-  }
-  .muted { color: #6b7280; }
-  .card {
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 14px;
-    background: #fff;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.03);
-  }
-  .card-lg { padding: 16px; }
-  .section-title {
-    margin: 0 0 12px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-  .grid-kpi {
-    display: grid;
-    gap: 12px;
-    grid-template-columns: 1fr;
-  }
-  @media (min-width: 640px) {
-    .grid-kpi { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  }
-  @media (min-width: 960px) {
-    .grid-kpi { grid-template-columns: repeat(4, minmax(0,1fr)); }
-  }
-  .filters {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: 1fr;
-  }
-  @media (min-width: 760px) {
-    .filters { grid-template-columns: 1fr 1fr; }
-  }
-  .field { display: flex; flex-direction: column; gap: 6px; }
-  .input, .number {
-    padding: 8px 10px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 14px;
-  }
-  .subtle {
-    font-size: 13px;
-    color: #6b7280;
-    text-align: center;
-    margin-top: 6px;
-  }
-  .header-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: baseline;
-    flex-wrap: wrap;
-  }
-  .h1 {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-  .chart-card { padding: 8px 12px 16px; }
-`;
-
-const MOCK_VIC_DATA = [
-  { year: 2013, vehicles: 4632000 },
-  { year: 2014, vehicles: 4728000 },
-  { year: 2015, vehicles: 4851000 },
-  { year: 2016, vehicles: 4997000 },
-  { year: 2017, vehicles: 5164000 },
-  { year: 2018, vehicles: 5338000 },
-  { year: 2019, vehicles: 5524000 },
-  { year: 2020, vehicles: 5631000 },
-  { year: 2021, vehicles: 5759000 },
-  { year: 2022, vehicles: 5946000 },
-  { year: 2023, vehicles: 6123000 },
-];
-
 function formatInt(n) {
   return Number(n || 0).toLocaleString();
 }
@@ -102,16 +18,20 @@ function calcCAGR(startVal, endVal, years) {
 }
 
 export default function InsightsPage() {
+
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [raw, setRaw] = useState([]);
+  const API_URL = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
 
   const minYear = useMemo(
-    () => (MOCK_VIC_DATA.length ? Math.min(...MOCK_VIC_DATA.map(d => d.year)) : 2013),
-    []
+    () => (raw.length ? Math.min(...raw.map(d => d.year)) : 2016),
+    [raw]
   );
   const maxYear = useMemo(
-    () => (MOCK_VIC_DATA.length ? Math.max(...MOCK_VIC_DATA.map(d => d.year)) : 2023),
-    []
+    () => (raw.length ? Math.max(...raw.map(d => d.year)) : 2020),
+    [raw]
   );
 
   const [fromYear, setFromYear] = useState(minYear);
@@ -122,15 +42,22 @@ export default function InsightsPage() {
     const run = async () => {
       setLoading(true);
       try {
-        // Replace with real API if needed:
-        // const res = await fetch(`/api/ownership?vicOnly=true&from=${fromYear}&to=${toYear}`);
-        // const json = await res.json();
-        // if (!cancelled) setData(json.rows);
-
-        const filtered = MOCK_VIC_DATA.filter(r => r.year >= fromYear && r.year <= toYear);
-        setTimeout(() => { if (!cancelled) setData(filtered); }, 80);
+        const res = await fetch(`${API_URL}/car_ownership`, {
+          headers: { Accept: "application/json" }
+        });
+        const text = await res.text();
+        const json = JSON.parse(text);
+        const rows = Array.isArray(json) ? json : (Array.isArray(json?.rows) ? json.rows : []);
+        const normalized = (rows || []).map(r => ({
+          year: Number(r.Year),
+          vehicles: Number(r.Number_of_cars_vic),
+          attrition: r.Attrition_rate != null ? Number(r.Attrition_rate) : undefined,
+        })).filter(r => !Number.isNaN(r.year) && !Number.isNaN(r.vehicles));
+        if (!cancelled) {
+          setRaw(normalized)
+        }
       } catch (e) {
-        console.error(e);
+        console.error("Network/parse error:", e?.message || e)
         if (!cancelled) setData([]);
       } finally {
         if (!cancelled) setLoading(false);
@@ -138,7 +65,21 @@ export default function InsightsPage() {
     };
     run();
     return () => { cancelled = true; };
-  }, [fromYear, toYear]);
+  }, [API_URL]);
+
+  useEffect(() => {
+    if (!raw.length) return;
+    const min = Math.min(...raw.map(d => d.year));
+    const max = Math.max(...raw.map(d => d.year));
+    setFromYear(min);
+    setToYear(max);
+  }, [raw]);
+
+
+  useEffect(() => {
+    const filtered = raw.filter(r => r.year >= fromYear && r.year <= toYear);
+    setData(filtered);
+  }, [raw, fromYear, toYear]);
 
   const kpis = useMemo(() => {
     if (!data.length) return { latest: 0, cagr: 0, peakYear: 0, peakVal: 0 };
@@ -151,80 +92,102 @@ export default function InsightsPage() {
     return { latest: last.vehicles, cagr, peakYear: peak.year, peakVal: peak.vehicles };
   }, [data]);
 
-  // keep ranges sane
+
   const onFromYearChange = (val) => setFromYear(Math.max(minYear, Math.min(Number(val), toYear)));
-  const onToYearChange   = (val) => setToYear(Math.min(maxYear, Math.max(Number(val), fromYear)));
+  const onToYearChange = (val) => setToYear(Math.min(maxYear, Math.max(Number(val), fromYear)));
 
   return (
     <>
-      <style>{styles}</style>
-      <div className="page">
-        {/* Header */}
-        <div className="header-row">
+      <div className="max-w-5xl mx-auto px-5 pt-4 pb-7">
+        <div className="flex justify-between gap-3 items-baseline flex-wrap">
           <div>
-            <h1 className="h1">Insights — Car Ownership (Victoria)</h1>
-            <p className="muted" style={{ margin: "6px 0 0", fontSize: 13 }}>
+            <h1 className="m-0 text-[22px] font-bold tracking-[-0.01em] text-teal-600">
+              Insights — Car Ownership (Victoria)
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
               ABS Motor Vehicle Census · Victoria (State-level only)
             </p>
           </div>
-          <small className="muted" style={{ fontSize: 13 }}>
-            Defaults to all available years. Use the inputs to refine.
-          </small>
         </div>
 
-        {/* Filters */}
-        <div className="card card-lg" style={{ marginTop: 16 }}>
-          <div className="section-title">Year Range</div>
-          <div className="filters">
-            <div className="field">
-              <label htmlFor="fromYear" className="muted" style={{ fontSize: 12 }}>From</label>
+        <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm mt-4">
+          <div className="mb-3 text-base font-semibold text-teal-600">Year Range</div>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="fromYear" className="text-xs text-gray-500">
+                From
+              </label>
               <input
-                id="fromYear" type="range"
-                min={minYear} max={maxYear} step={1}
+                id="fromYear"
+                type="range"
+                min={minYear}
+                max={maxYear}
+                step={1}
                 value={fromYear}
                 onChange={(e) => onFromYearChange(e.target.value)}
+                className="accent-tealLight"
               />
               <input
-                className="number" type="number"
-                min={minYear} max={toYear}
+                className="px-2 py-2 border border-gray-200 rounded-md text-sm"
+                type="number"
+                min={minYear}
+                max={toYear}
                 value={fromYear}
                 onChange={(e) => onFromYearChange(e.target.value)}
               />
             </div>
-
-            <div className="field">
-              <label htmlFor="toYear" className="muted" style={{ fontSize: 12 }}>To</label>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="toYear" className="text-xs text-gray-500">
+                To
+              </label>
               <input
-                id="toYear" type="range"
-                min={minYear} max={maxYear} step={1}
+                id="toYear"
+                type="range"
+                min={minYear}
+                max={maxYear}
+                step={1}
                 value={toYear}
                 onChange={(e) => onToYearChange(e.target.value)}
+                className="accent-tealLight"
               />
               <input
-                className="number" type="number"
-                min={fromYear} max={maxYear}
+                className="px-2 py-2 border border-gray-200 rounded-md text-sm"
+                type="number"
+                min={fromYear}
+                max={maxYear}
                 value={toYear}
                 onChange={(e) => onToYearChange(e.target.value)}
               />
             </div>
           </div>
-          <div className="subtle">Showing {fromYear}–{toYear}</div>
+          <div className="text-center text-sm text-gray-500 mt-2">
+            Showing {fromYear}–{toYear}
+          </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid-kpi" style={{ marginTop: 14 }}>
-          <KPI title="Latest Vehicles" value={formatInt(kpis.latest)} subtitle={`Year: ${data.length ? data[data.length - 1].year : "—"}`} />
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-3">
+          <KPI
+            title="Latest Vehicles"
+            value={formatInt(kpis.latest)}
+            subtitle={`Year: ${data.length ? data[data.length - 1].year : "—"}`}
+          />
           <KPI title="CAGR" value={`${(kpis.cagr * 100).toFixed(2)}%`} subtitle={`${fromYear}–${toYear}`} />
-          <KPI title="Peak Year" value={kpis.peakYear || "—"} subtitle={kpis.peakVal ? formatInt(kpis.peakVal) : ""} />
+          <KPI
+            title="Peak Year"
+            value={kpis.peakYear || "—"}
+            subtitle={kpis.peakVal ? formatInt(kpis.peakVal) : ""}
+          />
           <KPI title="Years Covered" value={data.length} subtitle={`${fromYear}–${toYear}`} />
         </div>
 
-        {/* Chart */}
-        <div className="card chart-card" style={{ marginTop: 14 }}>
-          <div className="section-title" style={{ marginBottom: 8 }}>Victoria Historical Car Ownership</div>
-          <div style={{ width: "100%", height: 340 }}>
+
+        <div className="border border-gray-200 rounded-xl p-3 bg-white shadow-sm mt-3">
+          <div className="mb-2 text-base font-semibold text-teal-600">
+            Victoria Historical Car Ownership
+          </div>
+          <div className="w-full h-[340px]">
             {loading ? (
-              <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }} className="muted">
+              <div className="flex h-full items-center justify-center text-gray-500">
                 Loading chart…
               </div>
             ) : (
@@ -232,40 +195,36 @@ export default function InsightsPage() {
                 <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                  <YAxis tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`} tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    formatter={(val) => formatInt(val)}
-                    labelFormatter={(l) => `Year: ${l}`}
-                  />
-                  <Bar dataKey="vehicles" radius={[6, 6, 0, 0]} />
+                  <YAxis tickFormatter={(v) => formatInt(v)} tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(val) => formatInt(val)} labelFormatter={(l) => `Year: ${l}`} />
+                  <Bar dataKey="vehicles" radius={[6, 6, 0, 0]} fill="#14b8a6" />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="card card-lg" style={{ marginTop: 14 }}>
-          <div className="section-title">Data & Assumptions</div>
-          <ul style={{ margin: 0, paddingLeft: 18, color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>
-            <li>Scope is <strong>Victoria-only</strong> for MVP.</li>
-            <li>Default view loads <em>all available years</em>.</li>
-            <li>Replace mock data with your API response: <code>[&#123; year, vehicles &#125;]</code>.</li>
-            <li>Consider caching and showing a “last updated” note on outages.</li>
-          </ul>
-        </div>
+        <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm mt-3">
+          <div className="mb-3 text-base font-semibold text-teal-600">Insight on data</div>
+          <ul className="m-0 pl-5 text-sm text-gray-500 leading-6 list-disc">
+            <li>Victoria’s registered vehicles fell from 209,495 (2016) to 188,855 (2020)—a net drop of 20,640 (CAGR –2.56%).</li>
+            <li>Biggest rise in 2018 (+22,021 / +10.27%); biggest fall in 2020 (–26,873 / –12.46%).</li>
+            <li>Average annual change –5,160 vehicles</li>
+            <li> average attrition rate 4.08% (high 4.50% in 2018, low 3.50% in 2020).</li>
+        </ul>
       </div>
+    </div >
     </>
   );
 }
 
-/* ---------- Simple KPI card ---------- */
+
 function KPI({ title, value, subtitle }) {
   return (
-    <div className="card">
-      <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>{title}</div>
-      <div style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
-      {subtitle ? <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{subtitle}</div> : null}
+    <div className="border border-gray-200 rounded-xl p-3 bg-white shadow-sm">
+      <div className="text-xs text-gray-500 mb-1.5">{title}</div>
+      <div className="text-[22px] font-bold text-teal-600">{value}</div>
+      {subtitle ? <div className="text-xs text-gray-500 mt-1">{subtitle}</div> : null}
     </div>
   );
 }
