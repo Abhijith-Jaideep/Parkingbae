@@ -17,7 +17,6 @@ const Navbar = () => {
           <li><a href="/" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Home</a></li>
           <li><a href="/insights" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Insights</a></li>
           <li><a href="/parking" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Parking Map</a></li>
-         <li><a href="/spot" className="rounded-full p-2 hover:text-white hover:bg-gradient-to-r from-tealDark to-tealLight transition">Parking Spot</a></li>
         </ul>
       </div>
     </nav>
