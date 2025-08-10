@@ -11,7 +11,7 @@ function App() {
       <Navbar/>
       {/* <LandingPage/> */}
       {/* <InsightsPage/> */}
-      <MelbourneParkingMap/>
+      <Map/>
     </div>
   );
 }
