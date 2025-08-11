@@ -133,6 +133,7 @@ def sensors_merged():
         """
         merged = merge_sensors_with_parking(sensors, parking, MERGE_KEY)
         merged = [m for m in merged if m["parking_sign_count"] > 0]  # keep only matched
+
         return jsonify({
             "merge_key": MERGE_KEY,
             "sensor_count": len(sensors),
