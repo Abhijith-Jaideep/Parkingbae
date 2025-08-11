@@ -59,9 +59,9 @@ function formatAgo(date) {
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hr${hrs>1?"s":""} ago`;
+  if (hrs < 24) return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
   const days = Math.floor(hrs / 24);
-  return `${days} day${days>1?"s":""} ago`;
+  return `${days} day${days > 1 ? "s" : ""} ago`;
 }
 
 
@@ -70,7 +70,7 @@ function ParkingMap() {
   const [dayFilter, setDayFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("");
   const [loading, setLoading] = useState(true); // State to check data is being fetched 
-  const [err, setErr] = useState(null); 
+  const [err, setErr] = useState(null);
   const [spots, setSpots] = useState([]); // Array of parking data from backend 
 
   const mapRef = useRef(null);
@@ -123,8 +123,8 @@ function ParkingMap() {
             zone_number: sensor.zone_number,
           };
         })
-        // Drop any without coords
-        .filter((s) => Number.isFinite(s.coords[0]) && Number.isFinite(s.coords[1]));
+          // Drop any without coords
+          .filter((s) => Number.isFinite(s.coords[0]) && Number.isFinite(s.coords[1]));
 
         if (!cancelled) setSpots(norm);
       } catch (e) {
@@ -213,11 +213,11 @@ function ParkingMap() {
       const rulesHtml =
         spot.rules && spot.rules.length
           ? spot.rules
-              .map(
-                (r) =>
-                  `<div><b>${r.display || "-"}</b> · ${r.days.join(", ") || "-"} · ${r.start?.slice(0,5) || "--:--"}–${r.finish?.slice(0,5) || "--:--"}</div>`
-              )
-              .join("")
+            .map(
+              (r) =>
+                `<div><b>${r.display || "-"}</b> · ${r.days.join(", ") || "-"} · ${r.start?.slice(0, 5) || "--:--"}–${r.finish?.slice(0, 5) || "--:--"}</div>`
+            )
+            .join("")
           : "<div>No posted restrictions</div>";
       const dt = spot.updatedAt ? new Date(spot.updatedAt) : null;
       const updatedLocal = dt ? dt.toLocaleString() : "--";
@@ -234,7 +234,7 @@ function ParkingMap() {
   }, [filteredSpots, statusColors]);
 
   return (
-    <div className="w-full h-[800px] flex justify-center items-center p-4 overflow-hidden">
+    <div className="w-full h-[800px] flex justify-center items-center p-4 ">
       <div className="relative w-full h-full max-w-4xl max-h-[90vh] bg-white rounded-3xl shadow-2xl p-6 flex flex-col space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-gray-200">
@@ -245,7 +245,7 @@ function ParkingMap() {
             <div>
               <h1 className="text-xl font-bold text-gray-800">Melbourne CBD Live Map</h1>
               <p className="text-sm text-gray-500">
-              {loading ? "Loading sensors…" : err ? `Error: ${err}` : `${filteredSpots.length} results`}
+                {loading ? "Loading sensors…" : err ? `Error: ${err}` : `${filteredSpots.length} results`}
               </p>
             </div>
           </div>
@@ -299,6 +299,36 @@ function ParkingMap() {
             </div>
           </div>
         </div>
+
+        <div className="absolute bottom-4 left-4 z-[1000]">
+          <details className="bg-white border border-gray-200 rounded-lg shadow-md p-3 w-64">
+            <summary className="cursor-pointer font-medium text-gray-800">
+              Parking Codes Legend
+            </summary>
+            <ul className="mt-2 space-y-1 text-sm text-gray-700 max-h-48 overflow-y-auto">
+              <li>2P – Parking allowed for up to 2 hours</li>
+              <li>1P – Parking allowed for up to 1 hour</li>
+              <li>MP2P – Metered Parking, 2-hour limit</li>
+              <li>4P – Parking allowed for up to 4 hours</li>
+              <li>PP – Permissive Parking</li>
+              <li>SP – Short-term Parking (~30 min)</li>
+              <li>MP4P – Metered Parking, 4-hour limit</li>
+              <li>LZ30 – Loading Zone, 30-minute limit</li>
+              <li>MP1P – Metered Parking, 1-hour limit</li>
+              <li>QP – Quarter-hour Parking (15 min)</li>
+              <li>MP3P – Metered Parking, 3-hour limit</li>
+              <li>HP – Holiday Parking</li>
+              <li>FP1P – Free Parking, 1-hour limit</li>
+              <li>LZ15 – Loading Zone, 15-minute limit</li>
+              <li>FP15 – Free Parking, 15-minute limit</li>
+              <li>3P – Parking allowed for up to 3 hours</li>
+              <li>FP2P – Free Parking, 2-hour limit</li>
+              <li>5P – Parking allowed for up to 5 hours</li>
+              <li>DP2P – Disabled Permit Parking, 2-hour limit</li>
+            </ul>
+          </details>
+        </div>
+
       </div>
     </div>
   );
