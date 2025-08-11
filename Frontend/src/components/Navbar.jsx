@@ -3,11 +3,14 @@ import { FaChartBar, FaHome, FaMap } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // Track mobile menu state
 
   return (
     <nav className="border-b bg-white">
+      {/* Main navbar container */}
       <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
+        
+        {/* Logo + tagline */}
         <Link to="/" className="block">
           <h1 className="text-2xl md:text-3xl font-semibold bg-gradient-to-r from-tealDark to-tealLight bg-clip-text text-transparent">
             ParkingBae
@@ -17,6 +20,7 @@ const Navbar = () => {
           </p>
         </Link>
 
+        {/* Desktop navigation links */}
         <ul className="hidden md:flex items-center gap-6 text-sm md:text-base">
           <li>
             <Link
@@ -34,7 +38,6 @@ const Navbar = () => {
               <FaChartBar className="text-tealLight" /> Insights
             </Link>
           </li>
-
           <li>
             <Link
               to="/parking"
@@ -45,6 +48,7 @@ const Navbar = () => {
           </li>
         </ul>
 
+        {/* Mobile menu toggle button */}
         <button
           className="md:hidden inline-flex items-center justify-center rounded-md p-2 ring-1 ring-gray-300 text-gray-700"
           onClick={() => setOpen((v) => !v)}
@@ -53,10 +57,12 @@ const Navbar = () => {
           aria-label="Toggle menu"
         >
           {!open ? (
+            // Hamburger icon
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           ) : (
+            // Close (X) icon
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -64,6 +70,7 @@ const Navbar = () => {
         </button>
       </div>
 
+      {/* Mobile menu dropdown */}
       <div
         id="mobile-menu"
         className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${open ? "max-h-96" : "max-h-0"}`}
@@ -97,9 +104,9 @@ const Navbar = () => {
             </Link>
           </li>
         </ul>
-
       </div>
 
+      {/* Click outside to close mobile menu */}
       {open && (
         <div
           className="md:hidden fixed inset-0 z-[-1]"
