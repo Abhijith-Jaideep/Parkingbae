@@ -9,54 +9,59 @@ const LandingPage = () => {
     const stats = [
         {
             icon: <FaCar className="text-xl text-tealLight" />,
-            value: "45,000+",
-            label: "Total Parking Spaces",
-        },
-        {
-            icon: <FaClock className="text-xl text-tealLight" />,
-            value: "8.5 min",
-            label: "Average Search Time",
+            value: "30%",
+            label: "CBD Traffic from Parking Search",
+            source: "https://www.abc.net.au/news/2023-03-11/melbourne-cbd-parking-overhaul-traffic-signage-ease-congestion/102083888"
         },
         {
             icon: <FaChartLine className="text-xl text-tealLight" />,
-            value: "85%",
-            label: "Peak Hour Occupancy",
+            value: "34–35%",
+            label: "Typical Congestion (2024)",
+            source: "https://www.tomtom.com/traffic-index/melbourne-traffic/"
+        },
+        {
+            icon: <FaClock className="text-xl text-tealLight" />,
+            value: "60–70%",
+            label: "Rush Hour Congestion",
+            source: "https://www.tomtom.com/traffic-index/melbourne-traffic/"
         },
         {
             icon: <FaUsers className="text-xl text-tealLight" />,
-            value: "180,000",
-            label: "Daily Commuters",
+            value: "Feb 14, 2024",
+            label: "Worst Travel Day",
+            source: "https://www.tomtom.com/traffic-index/melbourne-traffic/"
         },
     ];
+
 
     const cards = [
         {
             icon: "🚗",
             title: "Parking Shortage Crisis",
             badge: "High Impact",
-            desc:
-                "Melbourne CBD has one of the lowest parking space to population ratios in Australia, with only 0.3 spaces per resident."
+            desc: "Melbourne CBD has one of the lowest parking space to population ratios in Australia, with only 0.3 spaces per resident.",
+            source: "https://www.melbourne.vic.gov.au/off-street-parking"
         },
         {
             icon: "📈",
             title: "Economic Impact",
             badge: "High Impact",
-            desc:
-                "Drivers spend an average of $2,400 annually on parking fees in Melbourne CBD, with costs increasing 12% year-over-year."
-        },
-        {
-            icon: "⏱️",
-            title: "Time Lost Circling",
-            badge: "Medium",
-            desc:
-                "Commuters spend up to 8.5 minutes on average searching for a spot during peak hours."
+            desc: "Drivers spend an average of $2,400 annually on parking fees in Melbourne CBD, with costs increasing 12% year-over-year.",
+            source: "https://www.couriermail.com.au/real-estate/national/park-that-what-would-you-pay-to-park-your-car-in-australia/news-story/833925e71bc7726836f73fc10b642422"
         },
         {
             icon: "🌿",
             title: "Environmental Cost",
             badge: "Medium",
-            desc:
-                "Extra idling and circling adds to urban emissions and air pollution in the CBD."
+            desc: "Extra idling and circling adds to urban emissions and air pollution in the CBD.",
+            source: "https://eponline.com/articles/2022/10/19/engine-idling.aspx"
+        },
+        {
+            icon: "🅿️",
+            title: "Peak Hour Space Availability",
+            badge: "High Impact",
+            desc: "On-street parking occupancy in Melbourne CBD reaches up to 90% during peak hours.",
+            source: "https://drivemate.au/blog/affordable-parking-in-melbourne-cbd-the-ultimate-guide-by-drive-mate-clws5w62l003dr5g3oehirmia/"
         }
     ];
 
@@ -101,9 +106,21 @@ const LandingPage = () => {
                             key={stat.label}
                             className="bg-gray-100 rounded-xl shadow-sm p-6 flex flex-col items-center text-center hover:shadow-md transition"
                         >
-                            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-teal-50 mb-4">{stat.icon}</div>
+                            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-teal-50 mb-4">
+                                {stat.icon}
+                            </div>
                             <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
                             <div className="mt-1 text-sm text-gray-500">{stat.label}</div>
+                            {stat.source && (
+                                <a
+                                    href={stat.source}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-2 text-xs text-teal-600 underline hover:text-teal-800"
+                                >
+                                    Source
+                                </a>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -114,7 +131,6 @@ const LandingPage = () => {
                 <p className="text-center text-gray-600 mt-2">
                     Understanding the challenges facing Melbourne CBD commuters
                 </p>
-
                 <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {cards.map((c) => (
                         <div
@@ -129,6 +145,16 @@ const LandingPage = () => {
                                 {c.badge && <Badge>{c.badge}</Badge>}
                             </div>
                             <p className="mt-3 text-gray-600 leading-relaxed">{c.desc}</p>
+                            {c.source && (
+                                <a
+                                    href={c.source}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-3 block text-xs text-teal-600 underline hover:text-teal-800"
+                                >
+                                    Source
+                                </a>
+                            )}
                         </div>
                     ))}
                 </div>
