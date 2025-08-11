@@ -68,7 +68,6 @@ function formatAgo(date) {
 function ParkingMap() {
   //const [searchInput, setSearchInput] = useState(""); // Search Bar Functionality 
   const [dayFilter, setDayFilter] = useState("all");
-  const [timeFilter, setTimeFilter] = useState("");
   const [loading, setLoading] = useState(true); // State to check data is being fetched 
   const [err, setErr] = useState(null);
   const [spots, setSpots] = useState([]); // Array of parking data from backend 
@@ -160,7 +159,6 @@ function ParkingMap() {
 
   // Recompute filtered spots when filters change
   // const q = searchInput.toLowerCase().trim();
-  const timeMin = timeFilter ? toMinutes(timeFilter) : null;
 
   const filteredSpots = useMemo(() => {
     return spots.filter((s) => {
@@ -175,13 +173,7 @@ function ParkingMap() {
       // A spot matches day/time if ANY of its rules match the selected filters
       const ruleMatches = (rule) => {
         const dayOk = dayFilter === "all" || rule.days.includes(dayFilter);
-        const timeOk =
-          timeMin == null ||
-          (rule.startMin != null &&
-            rule.finishMin != null &&
-            timeMin >= rule.startMin &&
-            timeMin <= rule.finishMin);
-        return dayOk && timeOk;
+        return dayOk;
       };
 
       const matchesRestrictions =
@@ -191,7 +183,7 @@ function ParkingMap() {
 
       return matchesRestrictions;
     });
-  }, [spots, dayFilter, timeMin]);
+  }, [spots, dayFilter]);
 
   // Update markers when filteredSpots/statusColors change
   useEffect(() => {
@@ -279,11 +271,6 @@ function ParkingMap() {
               <option value="Sat">Saturday</option>
               <option value="Sun">Sunday</option>
             </select>
-            <input
-              type="time"
-              className="filter-input cursor-pointer min-w-[120px] md:w-1/2"
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)} />
           </div>
         </div>
 
