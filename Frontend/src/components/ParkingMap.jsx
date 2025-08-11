@@ -71,6 +71,7 @@ function ParkingMap() {
   const [loading, setLoading] = useState(true); // State to check data is being fetched 
   const [err, setErr] = useState(null);
   const [spots, setSpots] = useState([]); // Array of parking data from backend 
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false); 
 
   const mapRef = useRef(null);
   const markersLayerRef = useRef(null);
@@ -170,6 +171,9 @@ function ParkingMap() {
       // must have a zone number
       if (!s.zone_number) return false;
 
+      // Hide non-available when checkbox is on
+      if (showAvailableOnly && s.status !== "Available") return false;
+
       // A spot matches day/time if ANY of its rules match the selected filters
       const ruleMatches = (rule) => {
         const dayOk = dayFilter === "all" || rule.days.includes(dayFilter);
@@ -183,7 +187,7 @@ function ParkingMap() {
 
       return matchesRestrictions;
     });
-  }, [spots, dayFilter]);
+  }, [spots, dayFilter, showAvailableOnly]);
 
   // Update markers when filteredSpots/statusColors change
   useEffect(() => {
@@ -256,21 +260,47 @@ function ParkingMap() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg> */}
           </div>
-          <div className="flex w-full md:w-auto space-x-2 md:space-x-4">
-            <select
-              className="filter-input cursor-pointer min-w-[120px] md:w-1/2"
-              value={dayFilter}
-              onChange={(e) => setDayFilter(e.target.value)}
+          <div className="flex w-full md:w-auto items-center gap-3 flex-wrap bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+            {/* Restrictions select */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">Restrictions</span>
+              <select
+                id="restriction-day"
+                aria-label="Filter by restriction day"
+                className="h-9 min-w-[200px] rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                value={dayFilter}
+                onChange={(e) => setDayFilter(e.target.value)}
+              >
+                <option value="all">Show All</option>
+                <option value="Mon">Monday</option>
+                <option value="Tue">Tuesday</option>
+                <option value="Wed">Wednesday</option>
+                <option value="Thu">Thursday</option>
+                <option value="Fri">Friday</option>
+                <option value="Sat">Saturday</option>
+                <option value="Sun">Sunday</option>
+              </select>
+            </div>
+
+            {/* Helper text to explain day filter*/}
+            <span className="text-xs text-gray-500 basis-full md:basis-auto md:ml-2">
+              Shows parking spaces with parking restrictions on the selected day.
+            </span>
+
+            {/* Available only toggle */}
+            <label
+              htmlFor="only-available"
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-gray-300 bg-white px-3 py-1.5 shadow-sm hover:bg-gray-50"
             >
-              <option value="all">All Days</option>
-              <option value="Mon">Monday</option>
-              <option value="Tue">Tuesday</option>
-              <option value="Wed">Wednesday</option>
-              <option value="Thu">Thursday</option>
-              <option value="Fri">Friday</option>
-              <option value="Sat">Saturday</option>
-              <option value="Sun">Sunday</option>
-            </select>
+              <input
+                id="only-available"
+                type="checkbox"
+                className="h-4 w-4 accent-green-600"
+                checked={showAvailableOnly}
+                onChange={(e) => setShowAvailableOnly(e.target.checked)}
+              />
+              <span className="text-sm text-gray-700">Show available only</span>
+            </label>
           </div>
         </div>
 
