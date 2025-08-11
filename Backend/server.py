@@ -10,9 +10,9 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={
-    r"/car_ownership": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]},
-    r"/parking": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]},
-    r"/sensors_merged": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}
+    r"/car_ownership": {"origins": ["https://www.parkingbae-1.onrender.com/", "https://www.parkingbae-1.onrender.com/"]},
+    r"/parking": {"origins": ["https://www.parkingbae-1.onrender.com/", "https://www.parkingbae-1.onrender.com/"]},
+    r"/sensors_merged": {"origins": ["https://www.parkingbae-1.onrender.com/", "https://www.parkingbae-1.onrender.com/"]}
 })
 
 DATABASE_URL = os.getenv("DATABASE_URL")
