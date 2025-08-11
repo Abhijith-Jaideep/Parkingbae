@@ -11,7 +11,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={
     r"/car_ownership": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]},
-    r"/parking": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}
+    r"/parking": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]},
+    r"/sensors_merged": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}
 })
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -131,6 +132,8 @@ def sensors_merged():
             return jsonify({"error": "no_sensor_rows"}), 200
         """
         merged = merge_sensors_with_parking(sensors, parking, MERGE_KEY)
+        merged = [m for m in merged if m["parking_sign_count"] > 0]  # keep only matched
+
         return jsonify({
             "merge_key": MERGE_KEY,
             "sensor_count": len(sensors),
