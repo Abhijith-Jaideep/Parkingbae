@@ -12,10 +12,8 @@ app = Flask(__name__)
 from flask_cors import CORS
 
 ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://parkingbae-1.onrender.com",
-    "https://www.parkingbae-1.onrender.com",
+    "https://www.parkingbae.me",
+    "https://parkingbae.me"
 ]
 
 CORS(app, resources={
