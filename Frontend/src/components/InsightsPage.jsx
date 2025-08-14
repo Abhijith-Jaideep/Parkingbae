@@ -9,9 +9,11 @@ import {
   CartesianGrid,
 } from "recharts";
 
+// Format integer values with commas for display
 function formatInt(n) {
   return Number(n || 0).toLocaleString();
 }
+
 function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
 }
@@ -34,10 +36,12 @@ export default function InsightsPage() {
     return clamp(maxInRaw, SLIDER_MIN, SLIDER_MAX);
   }, [raw]);
 
+
   const [selectedStartYear, setSelectedStartYear] = useState(SLIDER_MIN);
   const [selectedEndYear, setSelectedEndYear] = useState(initialYear);
 
   // Fetch data once
+
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
@@ -60,6 +64,7 @@ export default function InsightsPage() {
       } catch (e) {
         console.error("Network/parse error:", e?.message || e);
         if (!cancelled) setRaw([]);
+
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -77,6 +82,7 @@ export default function InsightsPage() {
   }, [raw]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter data within selected range
+
   useEffect(() => {
     const filtered = (raw || []).filter(
       (r) => r.year >= selectedStartYear && r.year <= selectedEndYear
@@ -98,8 +104,9 @@ export default function InsightsPage() {
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Layout: left (controls + chart) and right (insights) */}
+       {/* Layout: left (controls + chart) and right (insights) */}
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {/* LEFT: slider + chart */}
           <div className="lg:col-span-2 flex flex-col gap-3">
@@ -193,4 +200,3 @@ export default function InsightsPage() {
     </>
   );
 }
-
