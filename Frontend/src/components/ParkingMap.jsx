@@ -5,7 +5,13 @@ import "../index.css";
 
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// Detect user's timezone (falls back to Melbourne)
+const USER_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "Australia/Melbourne";
 
+function todayShort(tz = USER_TZ) {
+  // Returns "Mon", "Tue", … in the given timezone
+  return new Intl.DateTimeFormat("en-AU", { weekday: "short", timeZone: tz }).format(new Date());
+}
 // Helper function for parsing day restrictions from parkign signs 
 function expandDays(rangeStr) {
   if (!rangeStr) return [];
@@ -47,7 +53,7 @@ function toMinutes(t) {
 function statusToBucket(s) {
   if (!s) return "Unknown";
   const sLow = s.toLowerCase();
-  if (sLow.includes("unoccupied")) return "Available";
+  if (sLow.includes("unoccupied")) return "Vacant";
   if (sLow.includes("present")) return "Occupied";
   return "Unknown";
 }
@@ -67,11 +73,11 @@ function formatAgo(date) {
 
 function ParkingMap() {
   //const [searchInput, setSearchInput] = useState(""); // Search Bar Functionality 
-  const [dayFilter, setDayFilter] = useState("all");
-  const [timeFilter, setTimeFilter] = useState("");
+  const [dayFilter, setDayFilter] = useState(todayShort(USER_TZ));
   const [loading, setLoading] = useState(true); // State to check data is being fetched 
   const [err, setErr] = useState(null);
   const [spots, setSpots] = useState([]); // Array of parking data from backend 
+  const [showVacantOnly, setShowVacantOnly] = useState(false); 
 
   const mapRef = useRef(null);
   const markersLayerRef = useRef(null);
@@ -79,7 +85,7 @@ function ParkingMap() {
   // Memoize static data so it doesn't change every render
 
   const statusColors = useMemo(() => ({
-    Available: 'green',
+    Vacant: 'green',
     Occupied: 'red',
   }), []);
 
@@ -158,10 +164,8 @@ function ParkingMap() {
     };
   }, []);
 
-  // Recompute filtered spots when filters change
+  // Filtering displayed parking spots logic 
   // const q = searchInput.toLowerCase().trim();
-  const timeMin = timeFilter ? toMinutes(timeFilter) : null;
-
   const filteredSpots = useMemo(() => {
     return spots.filter((s) => {
       // const matchesSearch =
@@ -169,29 +173,15 @@ function ParkingMap() {
       //   s.name.toLowerCase().includes(q) ||
       //   String(s.zone_number || "").includes(q)
 
-      // must have a zone number
+      // Data check - must have a zone number
       if (!s.zone_number) return false;
 
-      // A spot matches day/time if ANY of its rules match the selected filters
-      const ruleMatches = (rule) => {
-        const dayOk = dayFilter === "all" || rule.days.includes(dayFilter);
-        const timeOk =
-          timeMin == null ||
-          (rule.startMin != null &&
-            rule.finishMin != null &&
-            timeMin >= rule.startMin &&
-            timeMin <= rule.finishMin);
-        return dayOk && timeOk;
-      };
+      // display avaiable now only filter 
+      if (showVacantOnly && s.status !== "Vacant") return false;
 
-      const matchesRestrictions =
-        (s.rules && s.rules.length > 0)
-          ? s.rules.some(ruleMatches)
-          : true; // if no rules, don’t block it
-
-      return matchesRestrictions;
+      return true; 
     });
-  }, [spots, dayFilter, timeMin]);
+  }, [spots, showVacantOnly]);
 
   // Update markers when filteredSpots/statusColors change
   useEffect(() => {
@@ -208,17 +198,25 @@ function ParkingMap() {
         opacity: 1,
         fillOpacity: 0.85,
       }).addTo(layer);
+      
+      // Only show rules that match the current dayFilter (or all if "all")
+      const visibleRules =
+        dayFilter === "all"
+          ? (spot.rules || [])
+          : (spot.rules || []).filter(r => r.days?.includes(dayFilter));
 
       // Build popup with all sign rows
       const rulesHtml =
-        spot.rules && spot.rules.length
-          ? spot.rules
-            .map(
-              (r) =>
-                `<div><b>${r.display || "-"}</b> · ${r.days.join(", ") || "-"} · ${r.start?.slice(0, 5) || "--:--"}–${r.finish?.slice(0, 5) || "--:--"}</div>`
-            )
-            .join("")
-          : "<div>No posted restrictions</div>";
+        visibleRules.length
+          ? visibleRules
+              .map(r =>
+                `<div><b>${r.display || "-"}</b> · ${r.days.join(", ") || "-"} · ${r.start?.slice(0,5) || "--:--"}–${r.finish?.slice(0,5) || "--:--"}</div>`
+              )
+              .join("")
+          : (dayFilter === "all"
+              ? "<div>No posted restrictions</div>"
+              : `<div>No posted restrictions for ${dayFilter}</div>`);
+
       const dt = spot.updatedAt ? new Date(spot.updatedAt) : null;
       const updatedLocal = dt ? dt.toLocaleString() : "--";
       const updatedAgo = dt ? ` (${formatAgo(dt)})` : "";
@@ -231,7 +229,7 @@ function ParkingMap() {
         <small style="color:#6b7280">Updated: ${updatedLocal}${updatedAgo}</small>`
       );
     });
-  }, [filteredSpots, statusColors]);
+  }, [filteredSpots, statusColors, dayFilter]);
 
   return (
     <div className="w-full h-[800px] flex justify-center items-center p-4 ">
@@ -252,8 +250,9 @@ function ParkingMap() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
-          <div className="relative w-full">
+        <div className="w-full">
+          <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+            <div className="relative w-full">
             {/* <input
               type="text"
               placeholder="Search a street, zone, or landmark..."
@@ -264,28 +263,78 @@ function ParkingMap() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg> */}
           </div>
-          <div className="flex w-full md:w-auto space-x-2 md:space-x-4">
-            <select
-              className="filter-input cursor-pointer min-w-[120px] md:w-1/2"
-              value={dayFilter}
-              onChange={(e) => setDayFilter(e.target.value)}
-            >
-              <option value="all">All Days</option>
-              <option value="Mon">Monday</option>
-              <option value="Tue">Tuesday</option>
-              <option value="Wed">Wednesday</option>
-              <option value="Thu">Thursday</option>
-              <option value="Fri">Friday</option>
-              <option value="Sat">Saturday</option>
-              <option value="Sun">Sunday</option>
-            </select>
-            <input
-              type="time"
-              className="filter-input cursor-pointer min-w-[120px] md:w-1/2"
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)} />
+            {/* Restriction day Filter*/}
+            <div className="flex items-center gap-4 flex-wrap md:flex-nowrap">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-sm text-gray-700">Parking Restrictions</span>
+                <select
+                  id="restriction-day"
+                  aria-label="Filter by restriction day"
+                  className="h-9 w-[180px] md:w-[220px] rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  value={dayFilter}
+                  onChange={(e) => setDayFilter(e.target.value)}
+                >
+                  <option value="all">Show All</option>
+                  <option value="Mon">Monday</option>
+                  <option value="Tue">Tuesday</option>
+                  <option value="Wed">Wednesday</option>
+                  <option value="Thu">Thursday</option>
+                  <option value="Fri">Friday</option>
+                  <option value="Sat">Saturday</option>
+                  <option value="Sun">Sunday</option>
+                </select>
+              </div>
+
+              {/* Show vacant only checkbox */}
+              <label
+                htmlFor="only-vacant"
+                className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md border border-gray-300 bg-white px-3 shadow-sm hover:bg-gray-50 focus-within:ring-2 focus-within:ring-blue-500/40 shrink-0"
+              >
+                <input
+                  id="only-vacant"
+                  type="checkbox"
+                  className="h-4 w-4 accent-green-600"
+                  checked={showVacantOnly}
+                  onChange={(e) => setShowVacantOnly(e.target.checked)}
+                />
+                <span className="text-sm text-gray-700">Show Vacant only</span>
+
+                {/* Tooltip warning to encourage checking of parking codes */}
+                <span className="relative group inline-flex items-center" tabIndex={0}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="h-4 w-4 text-gray-500"
+                    aria-hidden="true"
+                    role="img"
+                  >
+                    <path d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5Zm0 6a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Zm-1.125 3.375c0-.414.336-.75.75-.75h.75c.414 0 .75.336.75.75V16.5h.375a.75.75 0 0 1 0 1.5h-2.25a.75.75 0 0 1 0-1.5h.375v-4.875Z" />
+                  </svg>
+
+                  {/* Popover box */}
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute z-50 mt-2 hidden max-w-sm -translate-x-1/2 left-1/2 top-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 shadow-lg group-hover:block group-focus:block"
+                  >
+                    Even if a spot is vacant, always check corresponding parking codes
+                    <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-white border-l border-t border-gray-200"></span>
+                  </span>
+                </span>
+              </label>
+
+
+              {/* Filler to consume leftover space if needed */}
+              <div className="grow" />
+            </div>
+
+            {/* Helper Text to explain day filter*/}
+            <p className="mt-2 text-xs text-gray-500">
+              Displays parking codes on the selected day.
+            </p>
           </div>
         </div>
+
 
         {/* Map */}
         <div className="relative flex-grow min-h-[300px] max-h-[500px]">
@@ -294,7 +343,7 @@ function ParkingMap() {
           {/* Legend */}
           <div className="absolute top-4 right-4 p-3 bg-white rounded-xl shadow-md text-sm text-gray-800 z-[1000]">
             <div className="flex items-center space-x-2">
-              <div className="flex items-center"><span className="h-4 w-4 rounded-full bg-green-500 mr-2"></span>Available</div>
+              <div className="flex items-center"><span className="h-4 w-4 rounded-full bg-green-500 mr-2"></span>Vacant</div>
               <div className="flex items-center"><span className="h-4 w-4 rounded-full bg-red-500 mr-2"></span>Occupied</div>
             </div>
           </div>
