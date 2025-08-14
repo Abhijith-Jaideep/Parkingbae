@@ -13,7 +13,8 @@ from flask_cors import CORS
 
 ALLOWED_ORIGINS = [
     "https://www.parkingbae.me",
-    "https://parkingbae.me",
+    "https://parkingbae.me"
+
 ]
 
 CORS(app, resources={
