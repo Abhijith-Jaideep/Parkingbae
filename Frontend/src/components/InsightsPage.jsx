@@ -196,7 +196,6 @@ export default function InsightsPage() {
             </div>
           </div>
         </div>
-      </div>
     </>
   );
 }
