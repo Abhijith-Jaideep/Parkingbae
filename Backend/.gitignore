@@ -1,0 +1,15 @@
+# Secrets. Never commit real values; see .env.example for the keys.
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Tooling
+.pytest_cache/
+.coverage
