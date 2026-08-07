@@ -97,10 +97,11 @@ export default function InsightsPage() {
         <div className="flex justify-between gap-3 items-baseline flex-wrap">
           <div>
             <h1 className="m-0 text-[22px] font-bold tracking-[-0.01em] text-teal-600">
-              Insights — Car Ownership (Victoria)
+              Insights — Victoria's Car Fleet
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              ABS Motor Vehicle Census · Victoria (State-level only)
+              BITRE Road Vehicles Australia, January 2025 · Victoria,
+              passenger vehicles
             </p>
           </div>
         </div>
@@ -145,7 +146,11 @@ export default function InsightsPage() {
             {/* Chart panel: Line chart */}
             <div className="border border-gray-100 rounded-xl p-4 bg-white shadow-md">
               <div className="mb-2 text-base font-semibold text-teal-600">
-                Victoria Historical Car Ownership
+                Registered passenger vehicles by year of manufacture
+              </div>
+              <div className="mb-3 text-xs text-gray-500">
+                How many cars of each model year are still on Victorian roads.
+                Counts are as at 31 January 2025.
               </div>
               <div className="w-full h-[360px]">
                 {loading ? (
@@ -187,11 +192,11 @@ export default function InsightsPage() {
             <div className="border border-teal-100 rounded-xl p-5 bg-gradient-to-b from-white to-teal-50/40 shadow-md h-full flex flex-col sticky lg:top-6">
               <div className="mb-3 text-base font-semibold text-teal-600">💡 Key insights</div>
               <ul className="list-disc pl-5 marker:text-teal-500 text-gray-700 text-[15px] leading-relaxed flex-1 flex flex-col justify-between space-y-6">
-                <li>From 2016 to 2020, the total number of registered cars in Victoria generally went down.</li>
-                <li>The strongest lift happened around 2018.</li>
-                <li>The sharpest drop happened in 2020.</li>
-                <li>Across these years, there was a small decrease on average each year.</li>
-                <li>Each year, a small share of cars leave the register. This share was a bit higher around 2018 and lower in 2020.</li>
+                <li>Victoria's fleet is young: just over half of it, 51%, was built in 2015 or later.</li>
+                <li>Only 10% of cars on the road predate 2005.</li>
+                <li>2023 is the most common model year, with about 248,000 still registered.</li>
+                <li>There are 27% fewer 2020 cars than 2019 ones, a visible dent left by pandemic factory shutdowns.</li>
+                <li>Around 5,100 cars built in 1990 are still registered, 35 years on.</li>
               </ul>
             </div>
           </div>
