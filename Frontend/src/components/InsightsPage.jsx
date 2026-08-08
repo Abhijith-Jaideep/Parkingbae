@@ -25,20 +25,19 @@ export default function InsightsPage() {
 
   const API_URL = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
 
-  // Fixed slider bounds per your request
-  const SLIDER_MIN = 2016;
-  const SLIDER_MAX = 2021;
-
-  // Use the latest year available in RAW (clamped to slider bounds) as initial selection
-  const initialYear = useMemo(() => {
-    if (!raw.length) return SLIDER_MAX;
-    const maxInRaw = Math.max(...raw.map((d) => d.year));
-    return clamp(maxInRaw, SLIDER_MIN, SLIDER_MAX);
+  // The bounds used to be hardcoded to 2016-2021. The series is now a fleet
+  // age profile spanning every model year still registered (1990 to 2024), so
+  // a fixed window silently hid most of it: the 1990 and 2023 figures called
+  // out beside the chart both fell outside the range and could never be drawn.
+  // Follow the data instead.
+  const [yearMin, yearMax] = useMemo(() => {
+    if (!raw.length) return [null, null];
+    const years = raw.map((d) => d.year);
+    return [Math.min(...years), Math.max(...years)];
   }, [raw]);
 
-
-  const [selectedStartYear, setSelectedStartYear] = useState(SLIDER_MIN);
-  const [selectedEndYear, setSelectedEndYear] = useState(initialYear);
+  const [selectedStartYear, setSelectedStartYear] = useState(null);
+  const [selectedEndYear, setSelectedEndYear] = useState(null);
 
   // Fetch data once
 
@@ -75,15 +74,20 @@ export default function InsightsPage() {
     };
   }, [API_URL]);
 
-  // Keep selectedEndYear in sync when raw changes and ensure start <= end
+  // Open on the whole series, and re-widen if the data ever changes shape.
   useEffect(() => {
-    setSelectedEndYear((prev) => clamp(prev || SLIDER_MAX, SLIDER_MIN, SLIDER_MAX));
-    setSelectedStartYear((prev) => clamp(prev || SLIDER_MIN, SLIDER_MIN, SLIDER_MAX));
-  }, [raw]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (yearMin === null) return;
+    setSelectedStartYear(yearMin);
+    setSelectedEndYear(yearMax);
+  }, [yearMin, yearMax]);
 
   // Filter data within selected range
 
   useEffect(() => {
+    if (selectedStartYear === null || selectedEndYear === null) {
+      setData(raw || []);
+      return;
+    }
     const filtered = (raw || []).filter(
       (r) => r.year >= selectedStartYear && r.year <= selectedEndYear
     );
@@ -91,13 +95,15 @@ export default function InsightsPage() {
   }, [raw, selectedStartYear, selectedEndYear]);
 
   return (
-    <>
-      <div className="max-w-5xl mx-auto px-5 pt-4 pb-7">
+    // Header and content share one container. The grid used to sit outside
+    // it and run full bleed, so the title was indented against a chart that
+    // started at the window edge.
+    <div className="max-w-5xl mx-auto px-5 pt-4 pb-7">
         {/* Header */}
         <div className="flex justify-between gap-3 items-baseline flex-wrap">
           <div>
             <h1 className="m-0 text-[22px] font-bold tracking-[-0.01em] text-teal-600">
-              Insights — Victoria's Car Fleet
+              Insights: Victoria's Car Fleet
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               BITRE Road Vehicles Australia, January 2025 · Victoria,
@@ -105,16 +111,15 @@ export default function InsightsPage() {
             </p>
           </div>
         </div>
-      </div>
 
-       {/* Layout: left (controls + chart) and right (insights) */}
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        {/* Layout: left (controls + chart) and right (insights) */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {/* LEFT: slider + chart */}
           <div className="lg:col-span-2 flex flex-col gap-3">
-            {/* Single slider (2016–2021) */}
+            {/* Single slider, bounded by whatever years the data covers */}
             <div className="border border-gray-100 rounded-xl p-5 bg-white shadow-md">
               <div className="mb-3 text-base font-semibold text-teal-600">
-                Year (2016–2021)
+                {yearMin === null ? "Year" : `Year (${yearMin}–${yearMax})`}
               </div>
               <div className="flex flex-col gap-2">
                 {/* Single-thumb range: control only the end year */}
@@ -122,23 +127,30 @@ export default function InsightsPage() {
                   <input
                     aria-label="End year"
                     type="range"
-                    min={SLIDER_MIN}
-                    max={SLIDER_MAX}
+                    min={yearMin ?? 0}
+                    max={yearMax ?? 0}
                     step={1}
-                    value={selectedEndYear}
+                    value={selectedEndYear ?? yearMax ?? 0}
+                    disabled={yearMin === null}
                     onChange={(e) => {
-                      const next = clamp(Number(e.target.value), selectedStartYear, SLIDER_MAX);
+                      const next = clamp(
+                        Number(e.target.value),
+                        selectedStartYear ?? yearMin,
+                        yearMax
+                      );
                       setSelectedEndYear(next);
                     }}
-                    className="accent-tealLight absolute inset-0 w-full bg-transparent"
+                    className="accent-tealLight absolute inset-0 w-full bg-transparent disabled:opacity-40"
                   />
                 </div>
                 <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>{SLIDER_MIN}</span>
+                  <span>{yearMin ?? "—"}</span>
                   <span className="font-medium text-gray-700">
-                    Selected: {selectedStartYear}–{selectedEndYear}
+                    {yearMin === null
+                      ? "Loading…"
+                      : `Selected: ${selectedStartYear}–${selectedEndYear}`}
                   </span>
-                  <span>{SLIDER_MAX}</span>
+                  <span>{yearMax ?? "—"}</span>
                 </div>
               </div>
             </div>
@@ -201,6 +213,6 @@ export default function InsightsPage() {
             </div>
           </div>
         </div>
-    </>
+    </div>
   );
 }
