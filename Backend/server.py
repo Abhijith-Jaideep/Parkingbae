@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 import requests
-import os, time 
+import os, time, threading
 from collections import defaultdict
 from flask_cors import CORS
 
@@ -46,8 +46,16 @@ EXPORT_URL = REAL_TIME_PARKING_API_URL.replace("/records", "/exports/json")
 
 # Occupancy only changes every few minutes, so serving a recent copy is fine
 # and spares both the portal and the visitor a round trip.
-_CACHE_TTL_SECONDS = 120
-_sensor_cache = {"rows": None, "fetched_at": 0.0}
+#
+# A background thread refreshes this on a timer, so no request ever waits on
+# the portal. Previously the refresh happened inline on whichever request
+# found the cache expired, which meant that visitor paid the full upstream
+# cost. When the export was failing and the paging fallback ran instead, that
+# was roughly 50 seconds.
+_REFRESH_INTERVAL_SECONDS = 60
+_sensor_cache = {"rows": None, "fetched_at": 0.0, "source": None}
+_sensor_lock = threading.Lock()
+_refresher_started = False
 
 
 def _fetch_via_pages():
@@ -73,29 +81,84 @@ def _fetch_via_pages():
     return all_rows
 
 
-def fetch_all_city_records(force=False):
-    now = time.time()
-    if (
-        not force
-        and _sensor_cache["rows"] is not None
-        and now - _sensor_cache["fetched_at"] < _CACHE_TTL_SECONDS
-    ):
-        return _sensor_cache["rows"]
+def _refresh_sensor_cache():
+    """Fetch the sensor rows once and store them. Never raises.
 
+    Which path was used is logged, because a silent fall back to paging is
+    the difference between a one second response and a fifty second one, and
+    from the outside the two are indistinguishable.
+    """
+    started = time.time()
     try:
-        r = requests.get(EXPORT_URL, timeout=60)
+        r = requests.get(EXPORT_URL, timeout=90)
         r.raise_for_status()
         rows = r.json()
         if not isinstance(rows, list):
             raise ValueError("export did not return a list")
+        source = "export"
     except Exception as e:
-        # Never fail the request just because the bulk endpoint misbehaved.
-        print(f"[sensors] bulk export failed ({e}), falling back to paging")
-        rows = _fetch_via_pages()
+        print(f"[sensors] bulk export failed ({e}), falling back to paging", flush=True)
+        try:
+            rows = _fetch_via_pages()
+            source = "paging"
+        except Exception as e2:
+            # Keep serving whatever is already cached rather than blanking the map.
+            print(f"[sensors] paging fallback failed too ({e2})", flush=True)
+            return False
 
-    _sensor_cache["rows"] = rows
-    _sensor_cache["fetched_at"] = now
-    return rows
+    with _sensor_lock:
+        _sensor_cache["rows"] = rows
+        _sensor_cache["fetched_at"] = time.time()
+        _sensor_cache["source"] = source
+
+    print(
+        f"[sensors] refreshed {len(rows)} rows via {source} "
+        f"in {time.time() - started:.1f}s",
+        flush=True,
+    )
+    return True
+
+
+def _refresh_loop():
+    while True:
+        try:
+            _refresh_sensor_cache()
+        except Exception as e:  # a crash here would silently freeze the data
+            print(f"[sensors] refresh loop error ({e})", flush=True)
+        time.sleep(_REFRESH_INTERVAL_SECONDS)
+
+
+def _ensure_refresher():
+    """Start the background thread once, inside whichever process serves
+    requests. Starting it at import time would not survive gunicorn's fork
+    when --preload is used, since threads are not inherited by the children.
+    """
+    global _refresher_started
+    with _sensor_lock:
+        if _refresher_started:
+            return
+        _refresher_started = True
+    threading.Thread(target=_refresh_loop, name="sensor-refresh", daemon=True).start()
+
+
+def fetch_all_city_records(force=False):
+    """Return the cached rows. Only the very first caller can ever block."""
+    _ensure_refresher()
+
+    if force:
+        _refresh_sensor_cache()
+
+    with _sensor_lock:
+        rows = _sensor_cache["rows"]
+
+    if rows is None:
+        # Cold start: a request arrived before the first refresh completed.
+        # Fetch inline this once so the response is data rather than an error.
+        _refresh_sensor_cache()
+        with _sensor_lock:
+            rows = _sensor_cache["rows"]
+
+    return rows or []
 
 
 # Sign plate restrictions are effectively static, so they are cached for much
@@ -191,11 +254,19 @@ def sensors_merged():
         merged = merge_sensors_with_parking(sensors, parking, MERGE_KEY)
         merged = [m for m in merged if m["parking_sign_count"] > 0]  # keep only matched
 
+        with _sensor_lock:
+            fetched_at = _sensor_cache["fetched_at"]
+            source = _sensor_cache["source"]
+
         return jsonify({
             "merge_key": MERGE_KEY,
             "sensor_count": len(sensors),
             "parking_count": len(parking),
-            "merged_count": len(merged),   
+            "merged_count": len(merged),
+            # How old the occupancy readings are, so the client can say so
+            # rather than implying the map is live to the second.
+            "data_age_seconds": round(time.time() - fetched_at) if fetched_at else None,
+            "data_source": source,
             "results": merged
         })
     except requests.HTTPError as e:
