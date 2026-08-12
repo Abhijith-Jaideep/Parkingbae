@@ -9,12 +9,24 @@ from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__)
-from flask_cors import CORS
+
+# Origins allowed to call the API.
+#
+# This used to be a hardcoded list holding only the custom domain. When that
+# domain lapsed and the frontend moved to its Render URL, every request was
+# refused by CORS and the map rendered "Failed to fetch" even though the API
+# was healthy. Reading it from the environment means the next deployment URL
+# is a config change, not a code change and a redeploy.
+DEFAULT_ORIGINS = [
+    "https://www.parkingbae.me",
+    "https://parkingbae.me",
+    "https://parkingbae-1.onrender.com",
+]
 
 ALLOWED_ORIGINS = [
-    "https://www.parkingbae.me",
-    "https://parkingbae.me"
-
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", ",".join(DEFAULT_ORIGINS)).split(",")
+    if origin.strip()
 ]
 
 CORS(app, resources={
